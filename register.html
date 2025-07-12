@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Registration</title>
+</head>
+<body>
+  <h1>Register for the Event</h1>
+  <form id="registerForm">
+    <input type="text" name="name" placeholder="Name" required />
+    <input type="email" name="email" placeholder="Email" required />
+    <button type="submit">Register</button>
+  </form>
+  <div id="qrContainer"></div>
+  <script>
+    navigator.geolocation.getCurrentPosition(pos => {
+      window.userLocation = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+    });
+
+    document.getElementById('registerForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(this).entries());
+      data.location = window.userLocation;
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      document.getElementById('qrContainer').innerHTML = `<img src="${json.qrUrl}" />`;
+    }
+  </script>
+</body>
+</html>

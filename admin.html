@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Attendance List</title>
+</head>
+<body>
+  <h1>Attended Users</h1>
+  <button onclick="loadData()">Refresh List</button>
+  <table border="1" id="table"></table>
+  <script>
+    async function loadData() {
+      const res = await fetch('/api/attendees');
+      const users = await res.json();
+      let html = '<tr><th>Name</th><th>Email</th><th>Time</th></tr>';
+      users.forEach(u => {
+        html += `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.attendedAt}</td></tr>`;
+      });
+      document.getElementById('table').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

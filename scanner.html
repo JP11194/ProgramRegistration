@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scan & Approve Attendance</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <h1>Scan QR, Review, Approve</h1>
+  <div id="reader" style="width:300px"></div>
+  <div id="userInfo"></div>
+  <script>
+    let currentId = null;
+
+    function showUser(user) {
+      document.getElementById('userInfo').innerHTML = `
+        <h2>User Details</h2>
+        <p><b>Name:</b> ${user.name}</p>
+        <p><b>Email:</b> ${user.email}</p>
+        <p><b>Registered Location:</b> ${user.location_lat}, ${user.location_lng}</p>
+        <button id="approveBtn">Approve Attendance</button>
+      `;
+
+      document.getElementById('approveBtn').onclick = async () => {
+        await fetch('/api/attend/' + currentId, { method: 'POST' });
+        document.getElementById('userInfo').innerHTML = '<p style="color:green">Attendance Approved ✔️</p>';
+      };
+    }
+
+    function onScanSuccess(decodedText) {
+      currentId = decodedText.replace('event-attendance:', '');
+      fetch('/api/user/' + currentId)
+        .then(r => r.json())
+        .then(showUser)
+        .catch(() => { document.getElementById('userInfo').innerText = 'User not found'; });
+      html5QrcodeScanner.clear();
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
