@@ -1,6 +1,6 @@
 
 const express = require('express');
-const QRCode  = require('qrcode');
+const QRCode = require('qrcode');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -9,43 +9,38 @@ const app = express();
 const DB_PATH = path.join(__dirname, 'data.db');
 const db = new sqlite3.Database(DB_PATH);
 
-// Create table on first run
+// Initialize table
 const INIT_SQL = `CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
+  ppc TEXT,
   name TEXT,
+  department TEXT,
+  region TEXT,
+  accommodation TEXT,
+  phone TEXT,
   email TEXT,
-  location_lat REAL,
-  location_lng REAL,
   attended INTEGER DEFAULT 0,
   attendedAt TEXT
 )`;
-
 db.run(INIT_SQL);
 
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// 👇 Add this block
-app.get('/', (req, res) => {
-  res.redirect('/register.html');
-});
-
-
-
-// 📥 Registration endpoint – stores in DB and returns QR
+// Registration with QR code
 app.post('/api/register', async (req, res) => {
   const id = Date.now().toString();
-  const { name, email, location } = req.body;
-  const stmt = db.prepare(`INSERT INTO users (id, name, email, location_lat, location_lng) VALUES (?,?,?,?,?)`);
-  stmt.run(id, name, email, location?.lat, location?.lng, err => {
+  const { ppc, name, department, region, accommodation, phone, email } = req.body;
+  const stmt = db.prepare(`INSERT INTO users (id, ppc, name, department, region, accommodation, phone, email) VALUES (?,?,?,?,?,?,?,?)`);
+  stmt.run(id, ppc, name, department, region, accommodation, phone, email, async (err) => {
     if (err) return res.status(500).json({ error: err.message });
-    QRCode.toDataURL(`event-attendance:${id}`)
-      .then(qrUrl => res.json({ qrUrl }))
-      .catch(e => res.status(500).json({ error: e.message }));
+    const qrData = `event-attendance:${id}`;
+    const qrUrl = await QRCode.toDataURL(qrData);
+    res.json({ qrUrl, id, name, ppc, department, region, accommodation, phone, email });
   });
 });
 
-// 📄 Fetch single user
+// Get user details by ID
 app.get('/api/user/:id', (req, res) => {
   db.get(`SELECT * FROM users WHERE id = ?`, [req.params.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -53,7 +48,7 @@ app.get('/api/user/:id', (req, res) => {
   });
 });
 
-// ✅ Approve attendance after receptionist review
+// Mark attendance
 app.post('/api/attend/:id', (req, res) => {
   const now = new Date().toISOString();
   db.run(`UPDATE users SET attended = 1, attendedAt = ? WHERE id = ?`, [now, req.params.id], function(err) {
@@ -62,8 +57,16 @@ app.post('/api/attend/:id', (req, res) => {
   });
 });
 
-// 📊 List of attendees
-app.get('/api/attendees', (_req, res) => {
+// Get all registered users
+app.get('/api/all-users', (_req, res) => {
+  db.all(`SELECT * FROM users ORDER BY id DESC`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Get attended users
+app.get('/api/attended-users', (_req, res) => {
   db.all(`SELECT * FROM users WHERE attended = 1 ORDER BY attendedAt DESC`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
