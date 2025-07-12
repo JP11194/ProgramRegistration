@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
   res.redirect('/register.html');
 });
 
-app.listen(3000, () => console.log('Server running at http://localhost:3000'));
+
 
 // 📥 Registration endpoint – stores in DB and returns QR
 app.post('/api/register', async (req, res) => {
