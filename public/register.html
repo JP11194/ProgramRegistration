@@ -2,35 +2,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Event Registration</title>
+  <title>SIBOA Mega Cultural Fest 2025 - Registration</title>
+  <style>
+    body { font-family: Arial; margin: 30px; background: #f9f9f9; }
+    h1 { color: red; }
+    form { background: white; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 0 10px #ccc; }
+    input, select { width: 100%; margin: 10px 0; padding: 10px; }
+    button { padding: 10px 15px; background: red; color: white; border: none; cursor: pointer; }
+    #qrContainer { margin-top: 20px; }
+  </style>
 </head>
 <body>
-  <h1>Register for the Event</h1>
+  <h1>SIBOA Mega Cultural Fest 2025</h1>
   <form id="registerForm">
+    <input type="text" name="ppc" placeholder="PPC" required />
     <input type="text" name="name" placeholder="Name" required />
+    <input type="text" name="department" placeholder="Department" required />
+    <input type="text" name="region" placeholder="Region" required />
+    <select name="accommodation" required>
+      <option value="">Accommodation Required?</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+    <input type="text" name="phone" placeholder="Phone" required />
     <input type="email" name="email" placeholder="Email" required />
     <button type="submit">Register</button>
   </form>
   <div id="qrContainer"></div>
   <script>
-    navigator.geolocation.getCurrentPosition(pos => {
-      window.userLocation = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      };
-    });
-
     document.getElementById('registerForm').onsubmit = async function(e) {
       e.preventDefault();
-      const data = Object.fromEntries(new FormData(this).entries());
-      data.location = window.userLocation;
+      const formData = Object.fromEntries(new FormData(this).entries());
       const res = await fetch('/api/register', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
-      const json = await res.json();
-      document.getElementById('qrContainer').innerHTML = `<img src="${json.qrUrl}" />`;
+      const data = await res.json();
+      const qr = `<img src="${data.qrUrl}" width="200" /><br/><button onclick="downloadQR('${data.qrUrl}')">Download QR</button>`;
+      const details = Object.entries(data).filter(([k]) => k !== 'qrUrl' && k !== 'id').map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join('');
+      document.getElementById('qrContainer').innerHTML = details + qr;
+    };
+
+    function downloadQR(dataURL) {
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = 'SIBOA_QR.png';
+      a.click();
     }
   </script>
 </body>
