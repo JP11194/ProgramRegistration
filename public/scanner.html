@@ -35,9 +35,18 @@
         .catch(() => { document.getElementById('userInfo').innerText = 'User not found'; });
       html5QrcodeScanner.clear();
     }
+const params = new URLSearchParams(window.location.search);
+const id = params.get('id');
 
-    const html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
+if (id) {
+  fetch('/api/user/' + id)
+    .then(r => r.json())
+    .then(showUser)
+    .catch(() => document.getElementById('userInfo').innerText = 'User not found');
+} else {
+  const html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
+  html5QrcodeScanner.render(onScanSuccess);
+}
   </script>
 </body>
 </html>
