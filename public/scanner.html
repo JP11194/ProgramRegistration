@@ -4,27 +4,22 @@
 <head>
   <title>Scan & Approve Attendance</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #userInfo { margin-top: 20px; }
+    button { padding: 10px; background: green; color: white; border: none; }
+  </style>
 </head>
 <body>
-  <h1>Scan QR, Review, Approve</h1>
+  <h1>Scan QR to View & Approve</h1>
   <div id="reader" style="width:300px"></div>
   <div id="userInfo"></div>
   <script>
     let currentId = null;
-
     function showUser(user) {
-      document.getElementById('userInfo').innerHTML = `
-        <h2>User Details</h2>
-        <p><b>Name:</b> ${user.name}</p>
-        <p><b>Email:</b> ${user.email}</p>
-        <p><b>Registered Location:</b> ${user.location_lat}, ${user.location_lng}</p>
-        <button id="approveBtn">Approve Attendance</button>
-      `;
-
-      document.getElementById('approveBtn').onclick = async () => {
-        await fetch('/api/attend/' + currentId, { method: 'POST' });
-        document.getElementById('userInfo').innerHTML = '<p style="color:green">Attendance Approved ✔️</p>';
-      };
+      const html = Object.entries(user).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join('') +
+        '<button onclick="approveAttendance()">Approve Attendance</button>';
+      document.getElementById('userInfo').innerHTML = html;
     }
 
     function onScanSuccess(decodedText) {
@@ -32,21 +27,17 @@
       fetch('/api/user/' + currentId)
         .then(r => r.json())
         .then(showUser)
-        .catch(() => { document.getElementById('userInfo').innerText = 'User not found'; });
+        .catch(() => document.getElementById('userInfo').innerText = 'User not found');
       html5QrcodeScanner.clear();
     }
-const params = new URLSearchParams(window.location.search);
-const id = params.get('id');
 
-if (id) {
-  fetch('/api/user/' + id)
-    .then(r => r.json())
-    .then(showUser)
-    .catch(() => document.getElementById('userInfo').innerText = 'User not found');
-} else {
-  const html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
-  html5QrcodeScanner.render(onScanSuccess);
-}
+    async function approveAttendance() {
+      await fetch('/api/attend/' + currentId, { method: 'POST' });
+      document.getElementById('userInfo').innerHTML += '<p style="color:green">Attendance Marked ✔</p>';
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
   </script>
 </body>
 </html>

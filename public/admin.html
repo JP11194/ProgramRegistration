@@ -2,22 +2,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Attendance List</title>
+  <title>Admin - SIBOA Attendance</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h2 { margin-top: 40px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #eee; }
+  </style>
 </head>
 <body>
-  <h1>Attended Users</h1>
-  <button onclick="loadData()">Refresh List</button>
-  <table border="1" id="table"></table>
+  <h1>Admin Panel – All Registered Users</h1>
+  <button onclick="loadAll()">Show All Registrations</button>
+  <button onclick="loadAttended()">Show Only Attended</button>
+  <h2 id="heading"></h2>
+  <table id="table"></table>
+
   <script>
-    async function loadData() {
-      const res = await fetch('/api/attendees');
-      const users = await res.json();
-      let html = '<tr><th>Name</th><th>Email</th><th>Time</th></tr>';
-      users.forEach(u => {
-        html += `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.attendedAt}</td></tr>`;
-      });
-      document.getElementById('table').innerHTML = html;
+    async function load(endpoint, label) {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      document.getElementById('heading').innerText = label + ' (' + data.length + ')';
+      const keys = ['ppc','name','department','region','accommodation','phone','email','attended','attendedAt'];
+      const header = '<tr>' + keys.map(k => `<th>${k}</th>`).join('') + '</tr>';
+      const rows = data.map(row => '<tr>' + keys.map(k => `<td>${row[k] ?? ''}</td>`).join('') + '</tr>').join('');
+      document.getElementById('table').innerHTML = header + rows;
     }
+    const loadAll = () => load('/api/all-users', 'All Registrations');
+    const loadAttended = () => load('/api/attended-users', 'Attended Users');
   </script>
 </body>
 </html>
